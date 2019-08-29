@@ -15,32 +15,29 @@ namespace LightsOut
         private const int GridOffset = 25; // Distance from upper-left side of window
 
         private int gridLength = 200; // Size in pixels of grid
-        private int numCells = 3; // Number of cells in grid
         private int cellLength = 0;
-        private bool[,] grid; // Stores on/off state of cells in grid
-        private Random rand; // Used to generate random numbers
+
+        private LightsOutGame _game = new LightsOutGame();
 
         public MainForm()
         {
             InitializeComponent();
-
-            rand = new Random(); // Initializes random number generator
-
+            
             loadNewGrid();
         }
 
         private void MainForm_Paint(object sender, PaintEventArgs e)
         {
             Graphics g = e.Graphics;
-            for (int r = 0; r < numCells; r++)
+            for (int r = 0; r < _game.GridSize; r++)
             {
-                for (int c = 0; c < numCells; c++)
+                for (int c = 0; c < _game.GridSize; c++)
                 {
                     // Get proper pen and brush for on/off
                     // grid section
                     Brush brush;
                     Pen pen;
-                    if (grid[r, c])
+                    if (_game.GetGridValue(r, c))
                     {
                         pen = Pens.Black;
                         brush = Brushes.White; // On
@@ -63,21 +60,17 @@ namespace LightsOut
         private void MainForm_MouseDown(object sender, MouseEventArgs e)
         {
             // Make sure click was inside the grid
-            if (e.X < GridOffset || e.X > cellLength * numCells + GridOffset ||
-            e.Y < GridOffset || e.Y > cellLength * numCells + GridOffset)
+            if (e.X < GridOffset || e.X > cellLength * _game.GridSize + GridOffset ||
+            e.Y < GridOffset || e.Y > cellLength * _game.GridSize + GridOffset)
                 return;
             // Find row, col of mouse press
             int r = (e.Y - GridOffset) / cellLength;
             int c = (e.X - GridOffset) / cellLength;
-            // Invert selected box and all surrounding boxes
-            for (int i = r - 1; i <= r + 1; i++)
-                for (int j = c - 1; j <= c + 1; j++)
-                    if (i >= 0 && i < numCells && j >= 0 && j < numCells)
-                        grid[i, j] = !grid[i, j];
+            _game.Move(r, c);
             // Redraw grid
             this.Invalidate();
             // Check to see if puzzle has been solved
-            if (PlayerWon())
+            if (_game.IsGameOver())
             {
                 // Display winner dialog box
                 MessageBox.Show(this, "Congratulations! You've won!", "Lights Out!",
@@ -85,31 +78,9 @@ namespace LightsOut
             }
         }
 
-        private bool PlayerWon()
-        {
-            bool result = true;
-
-            for (var i = 0; i < numCells; i++)
-            {
-                for (var j = 0; j < numCells; j++)
-                {
-                    if (grid[i, j])
-                    {
-                        result = false;
-                    }
-                }
-            }
-
-            return result;
-        }
-
         private void NewGameButton_Click(object sender, EventArgs e)
         {
-            // Fill grid with either white or black
-            for (int r = 0; r < numCells; r++)
-                for (int c = 0; c < numCells; c++)
-                    grid[r, c] = rand.Next(2) == 1;
-            // Redraw grid
+            _game.NewGame();
             this.Invalidate();
         }
 
@@ -135,7 +106,7 @@ namespace LightsOut
             x4ToolStripMenuItem.Checked = false;
             x5ToolStripMenuItem.Checked = false;
 
-            numCells = 3;
+            _game.GridSize = 3;
             loadNewGrid();
         }
 
@@ -145,7 +116,7 @@ namespace LightsOut
             x4ToolStripMenuItem.Checked = true;
             x5ToolStripMenuItem.Checked = false;
 
-            numCells = 4;
+            _game.GridSize = 4;
             loadNewGrid();
         }
 
@@ -155,19 +126,15 @@ namespace LightsOut
             x4ToolStripMenuItem.Checked = false;
             x5ToolStripMenuItem.Checked = true;
 
-            numCells = 5;
+            _game.GridSize = 5;
             loadNewGrid();
         }
 
         private void loadNewGrid()
         {
-            cellLength = gridLength / numCells;
-            grid = new bool[numCells, numCells];
+            cellLength = gridLength / _game.GridSize;
 
-            // Turn entire grid on
-            for (int r = 0; r < numCells; r++)
-                for (int c = 0; c < numCells; c++)
-                    grid[r, c] = true;
+            _game.NewGame();
             this.Invalidate();
         }
 
@@ -178,7 +145,7 @@ namespace LightsOut
             {
                 gridLength = this.Width - 2 * GridOffset;
             }
-            cellLength = gridLength / numCells;
+            cellLength = gridLength / _game.GridSize;
             this.Invalidate();
         }
     }
